@@ -124,6 +124,10 @@ ___
 ### Q: Additional audit information.
 Recording of the Code Walkthrough https://www.youtube.com/watch?v=Gdg3Fr2aepk
 
+This contest focuses on our next-generation vault architecture – a system designed to power curated and interoperable DeFi strategies at scale. 
+The goal: rigorously audit the codebase to ensure it’s secure, resilient, and production-ready for major institutional deployments.
+
+
 
 # Audit scope
 

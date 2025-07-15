@@ -122,7 +122,7 @@ https://mellowprotocol.notion.site/Flexible-Vaults-Architecture-22f02ad86276803c
 ___
 
 ### Q: Additional audit information.
-No
+Recording of the Code Walkthrough https://www.youtube.com/watch?v=Gdg3Fr2aepk
 
 
 # Audit scope

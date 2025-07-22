@@ -1,0 +1,181 @@
+{
+  "title": "2.2: The Factory Interfaces",
+  "id": "oZfVfY0vZIq4tDf7oM0pZOXd0sVBytYNbQsgOp3o444=",
+  "originalId": 5240,
+  "position": 3,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "This tour explores the **factory interfaces** in the `Mellow protocol`, which provide a standardized way to create and manage **upgradeable contract instances** with proper governance and versioning.",
+      "title": "",
+      "id": "64754"
+    },
+    {
+      "type": "revealFiles",
+      "files": [
+        "flexible-vaults/src/interfaces/factories/IFactoryEntity.sol"
+      ],
+      "description": "The `IFactoryEntity` interface defines the contract that all factory-created entities must implement. This is the foundation of the **factory pattern** in `Mellow`.",
+      "title": "",
+      "id": "64755",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "Every factory-created entity must implement an `initialize` function that accepts arbitrary initialization parameters. This is necessary because proxy contracts `can't use constructors` - initialization must happen after deployment.",
+      "file": "flexible-vaults/src/interfaces/factories/IFactoryEntity.sol",
+      "highlight": [
+        {
+          "start": 6,
+          "end": 8
+        }
+      ],
+      "title": "",
+      "id": "64756",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The `Initialized` event provides transparency by emitting the exact parameters used during initialization, making it easy to track how each entity was configured.",
+      "file": "flexible-vaults/src/interfaces/factories/IFactoryEntity.sol",
+      "highlight": [
+        {
+          "start": 10,
+          "end": 12
+        }
+      ],
+      "title": "",
+      "id": "64757",
+      "hideAreas": []
+    },
+    {
+      "type": "revealFiles",
+      "files": [
+        "flexible-vaults/src/interfaces/factories/IFactory.sol"
+      ],
+      "description": "The `IFactory` interface extends `IFactoryEntity` and defines the complete factory pattern. Notice how it imports key `OpenZeppelin` contracts for proxy management.",
+      "title": "",
+      "id": "64758",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The `FactoryStorage` struct manages the factory's state using `EnumerableSet`. Line 29 tracks all deployed entities, line 30 holds accepted implementations, line 31 manages pending proposals, and line 32 tracks blacklisted versions.",
+      "file": "flexible-vaults/src/interfaces/factories/IFactory.sol",
+      "highlight": [
+        {
+          "start": 27,
+          "end": 33
+        }
+      ],
+      "title": "",
+      "id": "64759",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The governance model requires a two-step process: first propose an implementation (line 65), then accept it (line 69). This prevents accidental deployment of untested implementations.",
+      "file": "flexible-vaults/src/interfaces/factories/IFactory.sol",
+      "highlight": [
+        {
+          "start": 64,
+          "end": 70
+        }
+      ],
+      "title": "",
+      "id": "64760",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The blacklisting mechanism allows the factory owner to disable specific versions if bugs are discovered. Line 60 shows the `version` parameter refers to an index, not an arbitrary version number.",
+      "file": "flexible-vaults/src/interfaces/factories/IFactory.sol",
+      "highlight": [
+        {
+          "start": 59,
+          "end": 62
+        }
+      ],
+      "title": "",
+      "id": "64761",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The **factory pattern** `create` function is the heart of the factory pattern. It takes a `version` index to select which implementation to use, an `owner` address for the proxy admin, and `initParams` for initialization.",
+      "file": "flexible-vaults/src/interfaces/factories/IFactory.sol",
+      "highlight": [
+        {
+          "start": 72,
+          "end": 77
+        }
+      ],
+      "title": "",
+      "id": "64762",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "Here's the actual creation process: lines 106-112 perform safety checks, line 113 retrieves the implementation, line 114 generates a unique salt for deterministic addresses, and lines 115-118 deploy a `TransparentUpgradeableProxy`.",
+      "file": "flexible-vaults/src/factories/Factory.sol",
+      "highlight": [
+        {
+          "start": 104,
+          "end": 121
+        }
+      ],
+      "title": "",
+      "id": "64763",
+      "hideAreas": []
+    },
+    {
+      "type": "mcq",
+      "description": "In the `Factory.sol` contract, when `create(version, owner, initParams)` is called, how is the `implementation` address for the new proxy determined?\n\nOptions:\n\n A). It is retrieved from the `implementations` array using the `version` parameter as an index.\n\nB). It is passed directly as part of the `initParams` calldata.\n\nC). It is derived from a combination of the `owner` address and a unique salt.\n\nD). It is hardcoded into the `create` function corresponding to the `version` number.\n\n\nCorrect: A). It is retrieved from the `implementations` array using the `version` parameter as an index.\n\nExplanation: The correct answer is that the implementation address is retrieved from the `implementations` array using `version` as an index. The `Factory.sol` contract confirms this at line 112: `address implementation = $.implementations.at(version);`. The `initParams` are used to initialize the state of the new proxy, not to select its logic. The salt is combined with other data to generate a deterministic address for the proxy, but it does not determine the implementation logic.",
+      "title": "",
+      "id": "64767",
+      "text": "In the `Factory.sol` contract, when `create(version, owner, initParams)` is called, how is the `implementation` address for the new proxy determined?",
+      "answers": [
+        "It is retrieved from the `implementations` array using the `version` parameter as an index.",
+        "It is passed directly as part of the `initParams` calldata.",
+        "It is derived from a combination of the `owner` address and a unique salt.",
+        "It is hardcoded into the `create` function corresponding to the `version` number."
+      ],
+      "correct": 0,
+      "explanation": "The correct answer is that the implementation address is retrieved from the `implementations` array using `version` as an index. The `Factory.sol` contract confirms this at line 112: `address implementation = $.implementations.at(version);`. The `initParams` are used to initialize the state of the new proxy, not to select its logic. The salt is combined with other data to generate a deterministic address for the proxy, but it does not determine the implementation logic."
+    },
+    {
+      "type": "highlight",
+      "description": "The `Created` event provides complete traceability by emitting the instance address, version used, owner, and initialization parameters. This allows for off-chain tracking and verification.",
+      "file": "flexible-vaults/src/interfaces/factories/IFactory.sol",
+      "highlight": [
+        {
+          "start": 88,
+          "end": 89
+        }
+      ],
+      "title": "",
+      "id": "64764",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The factory itself implements `IFactoryEntity`, enabling meta-factories - factories that can create other factories. The `initialize` function sets up the factory's owner from the provided data.",
+      "file": "flexible-vaults/src/factories/Factory.sol",
+      "highlight": [
+        {
+          "start": 62,
+          "end": 67
+        }
+      ],
+      "title": "",
+      "id": "64765",
+      "hideAreas": []
+    },
+    {
+      "type": "textOnly",
+      "description": "These interfaces establish a governed pattern for creating upgradeable contracts throughout Mellow. The two-step governance, versioning, and blacklisting mechanisms manage the deployment process and enable protocol evolution.",
+      "title": "",
+      "id": "64766"
+    }
+  ]
+}

@@ -1,0 +1,297 @@
+{
+  "title": "1.1: Mellow Flexible Vaults: A High-Level Overview",
+  "id": "xwPb4R0mTn+DLgEG+34gMIpT8mowapdmquOclPdjuB8=",
+  "originalId": 5233,
+  "position": 1,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "Welcome to the `Mellow Flexible Vaults` system! This tour will help you understand why this system exists and how it works from the ground up. \n\nImagine you're a **DeFi** user who wants to deposit `USDC` into a sophisticated yield strategy, but you don't want to worry about the technical complexities of interacting with multiple protocols, managing risk, or timing your entries and exits. That's exactly what `Mellow Flexible Vaults` solves - it creates a secure, user-friendly interface for complex **DeFi** strategies.",
+      "title": "",
+      "id": "64489"
+    },
+    {
+      "type": "textOnly",
+      "description": "The core problem: Traditional **DeFi** strategies require users to directly interact with multiple protocols, manage their own risk, and handle complex timing. This is risky, gas-expensive, and technically challenging.\n\n`Mellow`'s solution: A modular vault system that:\n- Pools user funds to execute strategies in batches, reducing gas costs per user\n- Implements risk management\n- Provides controlled access to external protocols\n- Handles complex timing and pricing automatically\n- Maintains transparency and upgradeability",
+      "title": "",
+      "id": "64490"
+    },
+    {
+      "type": "textOnly",
+      "description": "Let's follow a user's journey: Alice wants to deposit 1000 `USDC` into a yield strategy. Here's what happens:\n\n1. Alice deposits `USDC` into a `DepositQueue`\n2. The `Oracle` provides pricing data and triggers processing\n3. The `ShareManager` mints vault shares for Alice\n4. The `Vault` coordinates the entire process\n5. `Subvaults` execute the actual strategy using the pooled funds\n6. All external calls are secured by `Verifiers`\n\nLet's explore each component in detail.",
+      "title": "",
+      "id": "64491"
+    },
+    {
+      "type": "revealFiles",
+      "files": [
+        "flexible-vaults/src/vaults/VaultConfigurator.sol"
+      ],
+      "description": "Everything starts with the `VaultConfigurator` - the master orchestrator that creates a complete vault system. Think of it as the architect that designs and builds the entire infrastructure before any users can interact with it.",
+      "title": "",
+      "id": "64492",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The `create` function demonstrates the **coordinated deployment pattern**. It creates all the specialized managers first (lines 53-57), then creates the vault itself (line 69), and finally connects everything together (lines 70-72). This ensures that when users interact with the vault, all the necessary infrastructure is already in place and properly configured.",
+      "file": "flexible-vaults/src/vaults/VaultConfigurator.sol",
+      "highlight": [
+        {
+          "start": 49,
+          "end": 73
+        }
+      ],
+      "title": "",
+      "id": "64493",
+      "hideAreas": []
+    },
+    {
+      "type": "revealFiles",
+      "files": [
+        "flexible-vaults/src/interfaces/queues/IDepositQueue.sol"
+      ],
+      "description": "When Alice wants to deposit her USDC, she doesn't interact with the vault directly. Instead, she uses a `DepositQueue` - a specialized contract that handles the timing and batching of deposits.",
+      "title": "",
+      "id": "64494",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The **deposit queue** is designed to handle a high volume of deposits while providing consistent pricing. It uses a **time-delay mechanism** (lines 23-26) where deposits must wait for an oracle report before being processed. This ensures all users in a batch receive the same price and prevents front-running. To reduce the gas costs associated with processing many individual deposits, a **Fenwick Tree** (lines 34-42) is used for batch processing.",
+      "file": "flexible-vaults/src/interfaces/queues/IDepositQueue.sol",
+      "highlight": [
+        {
+          "start": 19,
+          "end": 47
+        }
+      ],
+      "title": "",
+      "id": "64495",
+      "hideAreas": []
+    },
+    {
+      "type": "revealFiles",
+      "files": [
+        "flexible-vaults/src/interfaces/oracles/IOracle.sol"
+      ],
+      "description": "The `Oracle` is the system's trusted price source and the trigger for processing deposits. It doesn't just provide prices - it orchestrates the entire flow of funds through the system.",
+      "title": "",
+      "id": "64496",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "When the oracle submits price reports, it triggers a cascade of actions throughout the system. The oracle doesn't just report prices - it processes pending deposits and redemptions across all queues (`lines 135-136`). This ensures that user requests are handled efficiently in batches, reducing gas costs and ensuring fair pricing for everyone.",
+      "file": "flexible-vaults/src/interfaces/oracles/IOracle.sol",
+      "highlight": [
+        {
+          "start": 134,
+          "end": 141
+        }
+      ],
+      "title": "",
+      "id": "64497",
+      "hideAreas": []
+    },
+    {
+      "type": "revealFiles",
+      "files": [
+        "flexible-vaults/src/interfaces/managers/IShareManager.sol"
+      ],
+      "description": "The `ShareManager` is responsible for minting vault shares when Alice's deposit is processed. It handles all the complex logic around permissions, limits, and share allocation.",
+      "title": "",
+      "id": "64498",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The system uses a two-step minting process for security and gas efficiency. First, shares are allocated (line 153) when a deposit is processed, then they're minted (line 156) when the user claims them. This allows the system to batch-process many deposits while letting users claim their shares individually. The `mint` function (line 159) handles direct minting for special cases.",
+      "file": "flexible-vaults/src/interfaces/managers/IShareManager.sol",
+      "highlight": [
+        {
+          "start": 152,
+          "end": 162
+        }
+      ],
+      "title": "",
+      "id": "64499",
+      "hideAreas": []
+    },
+    {
+      "type": "revealFiles",
+      "files": [
+        "flexible-vaults/src/vaults/Vault.sol"
+      ],
+      "description": "The `Vault` is the central coordinator that Alice interacts with. But notice how lean it is - it achieves its functionality through modular composition rather than implementing everything directly.",
+      "title": "",
+      "id": "64500",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "This inheritance pattern is the key to the system's flexibility. The `Vault` inherits from `VaultModule` and `ShareModule` (line 10), gaining specialized functionality from each. The **constructor** (lines 16-27) shows how each module is initialized with its own factories, allowing for independent upgrades and customization.",
+      "file": "flexible-vaults/src/vaults/Vault.sol",
+      "highlight": [
+        {
+          "start": 10,
+          "end": 27
+        }
+      ],
+      "title": "",
+      "id": "64501",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The modular initialization pattern allows each component to set up its own state independently. The `ShareModule` handles queue management and share operations (lines 45-47), while the `VaultModule` manages risk and subvault operations (line 48). This separation allows for complex functionality while maintaining clean interfaces.",
+      "file": "flexible-vaults/src/vaults/Vault.sol",
+      "highlight": [
+        {
+          "start": 44,
+          "end": 48
+        }
+      ],
+      "title": "",
+      "id": "64502",
+      "hideAreas": []
+    },
+    {
+      "type": "revealFiles",
+      "files": [
+        "flexible-vaults/src/vaults/Subvault.sol"
+      ],
+      "description": "Once Alice's `USDC` is in the vault, it needs to be deployed into actual yield strategies. This is where `Subvaults` come in - they hold portions of the vault's assets and execute the investment strategies.",
+      "title": "",
+      "id": "64503",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The `Subvault` follows the same modular pattern as the `Vault`. It inherits from `CallModule` and `SubvaultModule` (line 8), gaining the ability to make external calls and manage vault assets. This composition allows subvaults to be highly specialized while sharing common functionality.",
+      "file": "flexible-vaults/src/vaults/Subvault.sol",
+      "highlight": [
+        {
+          "start": 8,
+          "end": 12
+        }
+      ],
+      "title": "",
+      "id": "64504",
+      "hideAreas": []
+    },
+    {
+      "type": "revealFiles",
+      "files": [
+        "flexible-vaults/src/modules/CallModule.sol"
+      ],
+      "description": "The `CallModule` is where Alice's deposited **USDC** actually gets deployed into yield strategies. This module enables `Subvaults` to interact with external DeFi protocols while maintaining strict security controls.",
+      "title": "",
+      "id": "64505",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "This is the security heart of the system. Before any external call is made to deploy Alice's funds (line 18), it must pass through `verifier().verifyCall()` (line 17). This **gatekeeper pattern** ensures that subvaults can only execute pre-approved strategies and transactions. Without this verification, the call fails - there's no way to bypass this security check.",
+      "file": "flexible-vaults/src/modules/CallModule.sol",
+      "highlight": [
+        {
+          "start": 12,
+          "end": 19
+        }
+      ],
+      "title": "",
+      "id": "64506",
+      "hideAreas": []
+    },
+    {
+      "type": "mcq",
+      "description": "Based on the architecture presented, what is the primary security mechanism that controls how a `Subvault` interacts with external protocols?\n\nOptions:\n\n A). All interactions are routed through the main `Vault` contract, which contains `onlyOwner` checks.\n\nB). A dedicated `Verifier` contract must approve every external call's parameters before it is executed.\n\nC). The `ShareManager` uses a Merkle tree to whitelist all valid external function calls.\n\nD). External calls are only permitted if they are initiated by an account with the `SUBMIT_REPORTS_ROLE`.\n\n\nCorrect: B). A dedicated `Verifier` contract must approve every external call's parameters before it is executed.\n\nExplanation: The correct answer is that a `Verifier` contract must approve every call. The `CallModule`, inherited by the `Subvault`, uses `verifier().verifyCall(...)` as a gatekeeper for all external interactions. While the `Vault` coordinates, it doesn't directly gatekeep `Subvault` calls. The `ShareManager`'s Merkle tree is for user whitelisting, not function calls, and the `SUBMIT_REPORTS_ROLE` is for the `Oracle`.",
+      "title": "",
+      "id": "64531",
+      "text": "Based on the architecture presented, what is the primary security mechanism that controls how a `Subvault` interacts with external protocols?",
+      "answers": [
+        "All interactions are routed through the main `Vault` contract, which contains `onlyOwner` checks.",
+        "A dedicated `Verifier` contract must approve every external call's parameters before it is executed.",
+        "The `ShareManager` uses a Merkle tree to whitelist all valid external function calls.",
+        "External calls are only permitted if they are initiated by an account with the `SUBMIT_REPORTS_ROLE`."
+      ],
+      "correct": 1,
+      "explanation": "The correct answer is that a `Verifier` contract must approve every call. The `CallModule`, inherited by the `Subvault`, uses `verifier().verifyCall(...)` as a gatekeeper for all external interactions. While the `Vault` coordinates, it doesn't directly gatekeep `Subvault` calls. The `ShareManager`'s Merkle tree is for user whitelisting, not function calls, and the `SUBMIT_REPORTS_ROLE` is for the `Oracle`."
+    },
+    {
+      "type": "revealFiles",
+      "files": [
+        "flexible-vaults/src/modules/ShareModule.sol"
+      ],
+      "description": "The `ShareModule` coordinates the entire deposit flow we've been following. It manages queues, handles oracle reports, and ensures Alice's shares are properly minted when her deposit is processed.",
+      "title": "",
+      "id": "64507",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "This function shows how Alice's deposit actually gets converted to shares. When the oracle reports a price (line 271), the system calculates and mints management fees (lines 279-284), then processes all queues for that asset (lines 286-291). Each queue gets the price and timestamp, triggering the conversion of Alice's deposit into vault shares she can claim.",
+      "file": "flexible-vaults/src/modules/ShareModule.sol",
+      "highlight": [
+        {
+          "start": 271,
+          "end": 293
+        }
+      ],
+      "title": "",
+      "id": "64508",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "Here's how the modular system avoids storage collisions. Each module gets its own unique storage slot (line 33) using the `SlotLibrary`. This allows multiple modules to be safely composed together in the same contract without their data interfering with each other.",
+      "file": "flexible-vaults/src/modules/ShareModule.sol",
+      "highlight": [
+        {
+          "start": 30,
+          "end": 36
+        }
+      ],
+      "title": "",
+      "id": "64509",
+      "hideAreas": []
+    },
+    {
+      "type": "revealFiles",
+      "files": [
+        "flexible-vaults/src/libraries/SlotLibrary.sol"
+      ],
+      "description": "The `SlotLibrary` is the technical foundation that makes safe modular composition possible. It ensures that when multiple modules are combined in a single contract, they don't accidentally overwrite each other's storage.",
+      "title": "",
+      "id": "64510",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The `getSlot` function creates a unique storage location for each module based on its name and version (lines 14-18). This deterministic but collision-resistant approach ensures that each module has its own dedicated storage space, enabling safe composition of complex functionality.",
+      "file": "flexible-vaults/src/libraries/SlotLibrary.sol",
+      "highlight": [
+        {
+          "start": 13,
+          "end": 19
+        }
+      ],
+      "title": "",
+      "id": "64511",
+      "hideAreas": []
+    },
+    {
+      "type": "textOnly",
+      "description": "Let's recap Alice's journey and the system architecture:\n\n**Alice's Deposit Flow:**\n1. Alice deposits USDC → `DepositQueue` (time-delayed, batched)\n2. Oracle reports price → triggers processing across all queues\n3. `ShareManager` mints shares → Alice can claim them\n4. Funds flow to `Subvaults` → deployed via the `CallModule`\n\n**System Architecture:**\n* **Modular Design**: Each contract composes functionality from specialized modules\n* **Security First**: All external calls must pass through verifier gatekeepers\n* **Batched Processing**: Oracle-triggered processing handles many users simultaneously\n* **Isolated Module Storage**: Unique storage slots prevent module conflicts\n* **Upgradeable**: Each component can be upgraded independently",
+      "title": "",
+      "id": "64512"
+    },
+    {
+      "type": "textOnly",
+      "description": "Why this architecture matters:\n\n**For Users like Alice:**\n- A dedicated interface for deposits and withdrawals\n- Built-in risk management\n- Pricing based on batched transaction processing\n- No need to understand underlying **DeFi** protocols\n\n**For Strategy Developers:**\n- Framework for strategy execution with built-in verifiers\n- Modular components can be mixed and matched\n- Built-in risk management and access controls\n- Gas cost reduction through batching\n\n**For Vault Operators:**\n- Modular and upgradeable architecture\n- Role-based access control\n- Built-in fee management and oracle integration\n- Architecture designed to support a large number of users\n\nThis foundation enables a range of **DeFi** strategies by incorporating security and usability features. The upcoming specialized tours will explore each component in greater depth.",
+      "title": "",
+      "id": "64513"
+    }
+  ]
+}

@@ -1,0 +1,208 @@
+{
+  "title": "2.1: Factories: Overview",
+  "id": "6D7PwonNTV7Dl8z1HNUtp3xwhNkmrXFbTfM/5gce6Aw=",
+  "originalId": 5245,
+  "position": 2,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "This tour provides a high-level overview of the **factory contracts** in the **Mellow ecosystem**. You'll learn about the main `files` that make up the **factory component** and see how they are used to create new **vault components**.",
+      "title": "",
+      "id": "64461"
+    },
+    {
+      "type": "revealFiles",
+      "files": [
+        "flexible-vaults/src/interfaces/factories/IFactoryEntity.sol"
+      ],
+      "description": "We start with the `IFactoryEntity` interface. This simple interface defines the contract that entities created by factories must implement. It provides a standardized way for factories to initialize newly deployed contracts.",
+      "title": "",
+      "id": "64462",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The interface requires an `initialize` function that receives arbitrary initialization data and an `Initialized` event that signals when setup is complete. This pattern allows factories to deploy contracts and then configure them in a standardized way, ensuring all factory-created entities follow the same initialization protocol.",
+      "file": "flexible-vaults/src/interfaces/factories/IFactoryEntity.sol",
+      "highlight": [
+        {
+          "start": 5,
+          "end": 13
+        }
+      ],
+      "title": "",
+      "id": "64463",
+      "hideAreas": []
+    },
+    {
+      "type": "revealFiles",
+      "files": [
+        "flexible-vaults/src/interfaces/factories/IFactory.sol"
+      ],
+      "description": "Next, we examine the `IFactory` interface. This file defines the standard interface that all factory contracts must implement. It extends `IFactoryEntity`, meaning factories themselves can be created by other factories.",
+      "title": "",
+      "id": "64464",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The core of every factory is the `create` function. This function takes a version number to specify which implementation to use, an owner address for the new proxy, and initialization parameters. It returns the address of the newly deployed contract instance.",
+      "file": "flexible-vaults/src/interfaces/factories/IFactory.sol",
+      "highlight": [
+        {
+          "start": 72,
+          "end": 77
+        }
+      ],
+      "title": "",
+      "id": "64465",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The factory maintains sophisticated state management through the `FactoryStorage` structure. It tracks deployed entities, accepted implementations, pending proposals, and blacklisted versions. This provides governance over what can be deployed and ensures version control.",
+      "file": "flexible-vaults/src/interfaces/factories/IFactory.sol",
+      "highlight": [
+        {
+          "start": 27,
+          "end": 33
+        }
+      ],
+      "title": "",
+      "id": "64466",
+      "hideAreas": []
+    },
+    {
+      "type": "revealFiles",
+      "files": [
+        "flexible-vaults/src/factories/Factory.sol"
+      ],
+      "description": "Now let's look at the `Factory` contract, which provides the generic implementation of the `IFactory` interface. This contract is responsible for deploying and initializing new contracts based on registered templates.",
+      "title": "",
+      "id": "64467",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The `create` function handles the actual deployment. It validates the version isn't blacklisted (**line 109-110**), retrieves the implementation template (**line 112**), generates a unique salt for deterministic deployment (**line 113**), and creates a new `TransparentUpgradeableProxy` (**lines 114-118**). The new entity is tracked and an event is emitted.",
+      "file": "flexible-vaults/src/factories/Factory.sol",
+      "highlight": [
+        {
+          "start": 104,
+          "end": 121
+        }
+      ],
+      "title": "",
+      "id": "64468",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The factory implements a governance model for managing implementation templates. Anyone can propose a new implementation (lines 80-90), but only the owner can accept proposals (lines 93-101). This ensures that only trusted implementations can be used for deployments while allowing community participation.",
+      "file": "flexible-vaults/src/factories/Factory.sol",
+      "highlight": [
+        {
+          "start": 79,
+          "end": 101
+        }
+      ],
+      "title": "",
+      "id": "64469",
+      "hideAreas": []
+    },
+    {
+      "type": "mcq",
+      "description": "In the `Factory.sol` contract, what is the primary purpose of the two-step `proposeImplementation` and `acceptProposedImplementation` process?\n\nOptions:\n\n A). To allow anyone to deploy new contract versions, but only the owner can use them.\n\nB). To prevent the owner from unilaterally adding new implementations without a public proposal period.\n\nC). To enable community-driven proposals for new implementations while maintaining owner control over which versions are officially approved for deployment.\n\nD). To create a backup of all proposed implementations in case the primary implementation fails.\n\n\nCorrect: C). To enable community-driven proposals for new implementations while maintaining owner control over which versions are officially approved for deployment.\n\nExplanation: The correct answer accurately describes the governance model. The `proposeImplementation` function is `external`, allowing anyone to suggest a new implementation. However, the `acceptProposedImplementation` function has an `onlyOwner` modifier, ensuring that only the contract owner has the authority to approve an implementation for use in the `create` function. This creates a balanced system where the community can contribute, but control and security are maintained by the owner. The other options are incorrect because proposing does not equal deploying, there is no enforced waiting period, and the proposals list is not a backup mechanism.",
+      "title": "",
+      "id": "64476",
+      "text": "In the `Factory.sol` contract, what is the primary purpose of the two-step `proposeImplementation` and `acceptProposedImplementation` process?",
+      "answers": [
+        "To allow anyone to deploy new contract versions, but only the owner can use them.",
+        "To prevent the owner from unilaterally adding new implementations without a public proposal period.",
+        "To enable community-driven proposals for new implementations while maintaining owner control over which versions are officially approved for deployment.",
+        "To create a backup of all proposed implementations in case the primary implementation fails."
+      ],
+      "correct": 2,
+      "explanation": "The correct answer accurately describes the governance model. The `proposeImplementation` function is `external`, allowing anyone to suggest a new implementation. However, the `acceptProposedImplementation` function has an `onlyOwner` modifier, ensuring that only the contract owner has the authority to approve an implementation for use in the `create` function. This creates a balanced system where the community can contribute, but control and security are maintained by the owner. The other options are incorrect because proposing does not equal deploying, there is no enforced waiting period, and the proposals list is not a backup mechanism."
+    },
+    {
+      "type": "mcq",
+      "description": "According to the governance model in `Factory.sol`, what is the correct sequence of actions to make a new contract implementation available for deployment via the `create` function?\n\nOptions:\n\n A). The factory owner must call `proposeImplementation`, and then the owner must also call `acceptProposedImplementation`.\n\nB). Any address can call `proposeImplementation`, after which the factory owner must call `acceptProposedImplementation`.\n\nC). Any address can call `proposeImplementation`, and the new version is immediately available for use with the `create` function.\n\nD). The factory owner must directly call `acceptProposedImplementation` with the new implementation's address, bypassing the proposal step.\n\n\nCorrect: B). Any address can call `proposeImplementation`, after which the factory owner must call `acceptProposedImplementation`.\n\nExplanation: The correct sequence involves two steps with different permissions. First, `proposeImplementation` can be called by any external account to suggest a new implementation. This allows for community contribution. However, to ensure security and control, only the factory's `owner` can approve this proposal by calling `acceptProposedImplementation`. Only after acceptance is the implementation added to the list of available versions for the `create` function.",
+      "title": "",
+      "id": "64477",
+      "text": "According to the governance model in `Factory.sol`, what is the correct sequence of actions to make a new contract implementation available for deployment via the `create` function?",
+      "answers": [
+        "The factory owner must call `proposeImplementation`, and then the owner must also call `acceptProposedImplementation`.",
+        "Any address can call `proposeImplementation`, after which the factory owner must call `acceptProposedImplementation`.",
+        "Any address can call `proposeImplementation`, and the new version is immediately available for use with the `create` function.",
+        "The factory owner must directly call `acceptProposedImplementation` with the new implementation's address, bypassing the proposal step."
+      ],
+      "correct": 1,
+      "explanation": "The correct sequence involves two steps with different permissions. First, `proposeImplementation` can be called by any external account to suggest a new implementation. This allows for community contribution. However, to ensure security and control, only the factory's `owner` can approve this proposal by calling `acceptProposedImplementation`. Only after acceptance is the implementation added to the list of available versions for the `create` function."
+    },
+    {
+      "type": "textOnly",
+      "description": "Now let's see how these factories are used in practice by examining the `VaultConfigurator` contract, which orchestrates multiple factories to create complete vault setups.",
+      "title": "",
+      "id": "64470"
+    },
+    {
+      "type": "revealFiles",
+      "files": [
+        "flexible-vaults/src/vaults/VaultConfigurator.sol"
+      ],
+      "description": "The `VaultConfigurator` demonstrates factories in action. It uses various factories (`shareManagerFactory`, `feeManagerFactory`, `riskManagerFactory`, `vaultFactory`) to deploy a complete vault setup, showing how the **factory pattern** enables modular architecture.",
+      "title": "",
+      "id": "64471",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The configurator maintains references to five different factories: `shareManagerFactory`, `feeManagerFactory`, `riskManagerFactory`, `oracleFactory`, and `vaultFactory`. Each factory is responsible for creating a specific type of component in the vault ecosystem.",
+      "file": "flexible-vaults/src/vaults/VaultConfigurator.sol",
+      "highlight": [
+        {
+          "start": 27,
+          "end": 31
+        }
+      ],
+      "title": "",
+      "id": "64472",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The `create` function orchestrates the deployment of a complete vault system. Notice how the `create` function is called on each factory (lines 53-57), passing the appropriate version number, proxy admin address, and initialization parameters. This demonstrates the power of composing factories to build complex systems.",
+      "file": "flexible-vaults/src/vaults/VaultConfigurator.sol",
+      "highlight": [
+        {
+          "start": 49,
+          "end": 57
+        }
+      ],
+      "title": "",
+      "id": "64473",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "After creating the `vault` itself (line 69), the `configurator` wires everything together by setting vault references in the other components (lines 70-72). This shows how **factory-created components** can be linked together to form a cohesive system.",
+      "file": "flexible-vaults/src/vaults/VaultConfigurator.sol",
+      "highlight": [
+        {
+          "start": 69,
+          "end": 73
+        }
+      ],
+      "title": "",
+      "id": "64474",
+      "hideAreas": []
+    },
+    {
+      "type": "textOnly",
+      "description": "The **factory pattern** in `Mellow` provides a foundation for creating upgradeable, modular smart contract systems. By separating the concerns of deployment, governance, and initialization, factories enable flexible and maintainable DeFi protocols.",
+      "title": "",
+      "id": "64475"
+    }
+  ]
+}

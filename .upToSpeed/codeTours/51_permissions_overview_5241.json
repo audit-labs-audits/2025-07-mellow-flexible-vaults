@@ -1,0 +1,353 @@
+{
+  "title": "5.1: Permissions: Overview",
+  "id": "A1e5Dzh0iGWnWL04A30zFvyWGVaItRKVOvFqMI7b9fI=",
+  "originalId": 5241,
+  "position": 12,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "Welcome to the `Mellow` Permissions System tour! This walkthrough will guide you through the core components that secure `Mellow` flexible vaults. We'll explore how role-based access control, call verification, and consensus mechanisms work together to provide a comprehensive security framework.",
+      "title": "",
+      "id": "64822"
+    },
+    {
+      "type": "revealFiles",
+      "files": [
+        "flexible-vaults/src/permissions/MellowACL.sol"
+      ],
+      "description": "Let's start with `MellowACL`, the foundation of **role-based access control** in Mellow vaults. This contract extends `OpenZeppelin's AccessControlEnumerable` to track which roles are actively in use within the system.",
+      "title": "",
+      "id": "64823",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The `MellowACL` interface defines the core functionality. It tracks roles using an `EnumerableSet`, ensuring we can efficiently query which roles are currently active (meaning they have at least one member assigned). This supports vault management and permission auditing.",
+      "file": "flexible-vaults/src/interfaces/permissions/IMellowACL.sol",
+      "highlight": [
+        {
+          "start": 6,
+          "end": 25
+        }
+      ],
+      "title": "",
+      "id": "64824",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "`MellowACL` inherits from OpenZeppelin's `AccessControlEnumerableUpgradeable`, which provides the standard `hasRole` and `grantRole` functions. This inheritance gives us the foundational access control capabilities while allowing Mellow to add specialized role tracking.",
+      "file": "flexible-vaults/src/permissions/MellowACL.sol",
+      "highlight": [
+        {
+          "start": 8,
+          "end": 9
+        }
+      ],
+      "title": "",
+      "id": "64825",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The `onlyRole` modifier is a practical example of how role checks are enforced. It calls back to the vault to verify the caller's permissions before allowing the rest of the function to execute. This is the standard pattern for role-based authorization used throughout the Mellow system.",
+      "file": "flexible-vaults/src/permissions/Verifier.sol",
+      "highlight": [
+        {
+          "start": 22,
+          "end": 27
+        }
+      ],
+      "title": "",
+      "id": "64826",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The `grantRole` function (inherited from `OpenZeppelin`) is used during vault initialization to assign roles to addresses. This loop iterates through the `roleHolders` array, granting each holder their specified role. This is the primary mechanism for setting up permissions.",
+      "file": "flexible-vaults/src/vaults/Vault.sol",
+      "highlight": [
+        {
+          "start": 49,
+          "end": 51
+        }
+      ],
+      "title": "",
+      "id": "64827",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "MellowACL overrides the internal `_grantRole` and `_revokeRole` functions to add automatic role tracking. When a role is granted for the first time (line 39), it gets added to the supported roles set. When the last member of a role is removed (line 49), the role is automatically removed from the set.",
+      "file": "flexible-vaults/src/permissions/MellowACL.sol",
+      "highlight": [
+        {
+          "start": 37,
+          "end": 56
+        }
+      ],
+      "title": "",
+      "id": "64828",
+      "hideAreas": []
+    },
+    {
+      "type": "revealFiles",
+      "files": [
+        "flexible-vaults/src/interfaces/permissions/IVerifier.sol"
+      ],
+      "description": "Next, let's explore the **Verifier** system. Verifiers are responsible for authorizing external calls made by `vaults`, ensuring that only approved actions can be executed.",
+      "title": "",
+      "id": "64829",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The Verifier works with two main call types: `CompactCall` for simple function-level authorization (who can call which function), and `ExtendedCall` for full validation including call value and complete calldata. `CompactCall` is ideal for allowlisting specific functions, while `ExtendedCall` validates the complete transaction including parameters.",
+      "file": "flexible-vaults/src/interfaces/permissions/IVerifier.sol",
+      "highlight": [
+        {
+          "start": 32,
+          "end": 47
+        }
+      ],
+      "title": "",
+      "id": "64830",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The `Verifier` supports four verification methods: **ONCHAIN_COMPACT** for pre-approved calls stored on-chain, **MERKLE_COMPACT** and **MERKLE_EXTENDED** for Merkle proof-based verification, and **CUSTOM_VERIFIER** for delegating to specialized verification contracts. Each method offers different trade-offs between gas costs and flexibility.",
+      "file": "flexible-vaults/src/interfaces/permissions/IVerifier.sol",
+      "highlight": [
+        {
+          "start": 58,
+          "end": 72
+        }
+      ],
+      "title": "",
+      "id": "64831",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The core `verifyCall` function is the primary interface that vaults use to validate external calls. It takes all call details (who, where, value, data) plus a verification payload containing the method and proof data. This function must be called before any external action is executed.",
+      "file": "flexible-vaults/src/interfaces/permissions/IVerifier.sol",
+      "highlight": [
+        {
+          "start": 121,
+          "end": 128
+        }
+      ],
+      "title": "",
+      "id": "64832",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "Here's how `verifyCall` works step by step. First, it checks if the caller has the **CALLER_ROLE** using `hasRole` (`line 95`). For **ONCHAIN_COMPACT** verification, it simply checks the allowlist (`line 100`). For Merkle-based verification, it validates the proof against the stored Merkle root (`lines 104-108`).",
+      "file": "flexible-vaults/src/permissions/Verifier.sol",
+      "highlight": [
+        {
+          "start": 94,
+          "end": 108
+        }
+      ],
+      "title": "",
+      "id": "64833",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The verification continues by matching the call details against the verification data. For `MERKLE_EXTENDED`, it validates the complete call hash (line 111). For `MERKLE_COMPACT`, it checks only the function selector (line 113). For `CUSTOM_VERIFIER`, it delegates to an external contract (line 119).",
+      "file": "flexible-vaults/src/permissions/Verifier.sol",
+      "highlight": [
+        {
+          "start": 110,
+          "end": 123
+        }
+      ],
+      "title": "",
+      "id": "64834",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "Here's a concrete example of an **ONCHAIN_COMPACT** verification payload. The verification type is set to **ONCHAIN_COMPACT**, with empty `verification data` and `proof arrays` since all information is stored on-chain in the `allowlist`.",
+      "file": "flexible-vaults/test/unit/permissions/Verifier.t.sol",
+      "highlight": [
+        {
+          "start": 174,
+          "end": 178
+        }
+      ],
+      "title": "",
+      "id": "64835",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "In contrast, here's a **MERKLE_EXTENDED** verification payload. The verification data contains the hash of the complete `ExtendedCall` (including `who`, `where`, `value`, and `data`), while the `proof array` contains the Merkle proof needed to validate against the stored root.",
+      "file": "flexible-vaults/test/unit/permissions/Verifier.t.sol",
+      "highlight": [
+        {
+          "start": 200,
+          "end": 208
+        }
+      ],
+      "title": "",
+      "id": "64836",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "For `MERKLE_COMPACT` verification, only the `CompactCall` hash (`who`, `where`, `selector`) is stored in verification data. This allows the same verification to work for any call with the same `selector` but different parameters - notice how this works for both `validCalldata1` and `validCalldata2` in the test.",
+      "file": "flexible-vaults/test/unit/permissions/Verifier.t.sol",
+      "highlight": [
+        {
+          "start": 225,
+          "end": 231
+        }
+      ],
+      "title": "",
+      "id": "64837",
+      "hideAreas": []
+    },
+    {
+      "type": "mcq",
+      "description": "A vault needs to execute a single, high-value operation with a precise, one-time amount and recipient. The operation must be cryptographically verified to prevent any alteration of the call parameters. Which `VerificationType` is the most appropriate for this task?\n\nOptions:\n\n A). ONCHAIN_COMPACT\n\nB). MERKLE_EXTENDED\n\nC). MERKLE_COMPACT\n\nD). CUSTOM_VERIFIER\n\n\nCorrect: B). MERKLE_EXTENDED\n\nExplanation: The correct answer is `MERKLE_EXTENDED`. This type validates a hash of the `ExtendedCall` struct, which includes the caller, target, value, and the full calldata. This ensures that the exact arguments of the operation are verified against a Merkle root. `ONCHAIN_COMPACT` and `MERKLE_COMPACT` only validate the function selector, not the specific arguments, making them unsuitable for enforcing a precise amount. A `CUSTOM_VERIFIER` could be built for this, but `MERKLE_EXTENDED` is the standard mechanism designed for this exact purpose.",
+      "title": "",
+      "id": "64849",
+      "text": "A vault needs to execute a single, high-value operation with a precise, one-time amount and recipient. The operation must be cryptographically verified to prevent any alteration of the call parameters. Which `VerificationType` is the most appropriate for this task?",
+      "answers": [
+        "ONCHAIN_COMPACT",
+        "MERKLE_EXTENDED",
+        "MERKLE_COMPACT",
+        "CUSTOM_VERIFIER"
+      ],
+      "correct": 1,
+      "explanation": "The correct answer is `MERKLE_EXTENDED`. This type validates a hash of the `ExtendedCall` struct, which includes the caller, target, value, and the full calldata. This ensures that the exact arguments of the operation are verified against a Merkle root. `ONCHAIN_COMPACT` and `MERKLE_COMPACT` only validate the function selector, not the specific arguments, making them unsuitable for enforcing a precise amount. A `CUSTOM_VERIFIER` could be built for this, but `MERKLE_EXTENDED` is the standard mechanism designed for this exact purpose."
+    },
+    {
+      "type": "revealFiles",
+      "files": [
+        "flexible-vaults/src/interfaces/permissions/IConsensus.sol"
+      ],
+      "description": "Now let's examine `Consensus`, which enables multisignature validation for vault operations. This contract validates that multiple trusted parties have signed off on an action before it can proceed.",
+      "title": "",
+      "id": "64838",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "Consensus supports two signature types: **EIP712** for standard ECDSA signatures from externally owned accounts, and **EIP1271** for smart contract wallets like `Safe`. The system requires a configurable threshold of valid signatures from registered signers.",
+      "file": "flexible-vaults/src/interfaces/permissions/IConsensus.sol",
+      "highlight": [
+        {
+          "start": 39,
+          "end": 56
+        }
+      ],
+      "title": "",
+      "id": "64839",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The **signature validation logic** handles both signature types. For `EIP712` signatures, it recovers the signer using `ECDSA` (line 34). For `EIP1271` signatures, it calls the **smart contract**'s validation function (line 39). The system requires all provided signatures to be valid and from **registered signers**.",
+      "file": "flexible-vaults/src/permissions/Consensus.sol",
+      "highlight": [
+        {
+          "start": 21,
+          "end": 48
+        }
+      ],
+      "title": "",
+      "id": "64840",
+      "hideAreas": []
+    },
+    {
+      "type": "revealFiles",
+      "files": [
+        "flexible-vaults/src/permissions/protocols/ERC20Verifier.sol"
+      ],
+      "description": "Let's dive deeper into **Protocol-Specific Verifiers** with the `ERC20Verifier` as a concrete example. This shows how specialized verifiers implement protocol-specific authorization logic while integrating with the broader Mellow permissions framework.",
+      "title": "",
+      "id": "64841",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "`ERC20Verifier` defines three specialized roles: `ASSET_ROLE` for approved tokens, `CALLER_ROLE` for authorized callers, and `RECIPIENT_ROLE` for approved recipients. This role-based approach provides fine-grained control over token operations.",
+      "file": "flexible-vaults/src/permissions/protocols/ERC20Verifier.sol",
+      "highlight": [
+        {
+          "start": 8,
+          "end": 12
+        }
+      ],
+      "title": "",
+      "id": "64842",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The `ERC20Verifier`'s `verifyCall` function shows specialized validation logic. It checks that no ETH is sent (**line 24**), validates the caller and target have appropriate roles, and ensures only `approve` and `transfer` functions are allowed (**line 28**). The recipient must also have the `RECIPIENT_ROLE` (**line 32**).",
+      "file": "flexible-vaults/src/permissions/protocols/ERC20Verifier.sol",
+      "highlight": [
+        {
+          "start": 17,
+          "end": 43
+        }
+      ],
+      "title": "",
+      "id": "64843",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "Protocol-specific verifiers like `ERC20Verifier` inherit from `OwnedCustomVerifier`, which itself extends `MellowACL`. This inheritance chain gives protocol verifiers access to the full role management system while maintaining their specialized validation logic.",
+      "file": "flexible-vaults/src/permissions/protocols/OwnedCustomVerifier.sol",
+      "highlight": [
+        {
+          "start": 7,
+          "end": 12
+        }
+      ],
+      "title": "",
+      "id": "64844",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "Here's how error handling works in the permissions system. When a caller lacks the required role, the system reverts with `Forbidden()` (line 104). This provides clear feedback about permission failures and prevents unauthorized actions.",
+      "file": "flexible-vaults/test/unit/permissions/Verifier.t.sol",
+      "highlight": [
+        {
+          "start": 103,
+          "end": 108
+        }
+      ],
+      "title": "",
+      "id": "64845",
+      "hideAreas": []
+    },
+    {
+      "type": "textOnly",
+      "description": "**How It All Works Together**\n\nWhen a vault wants to make an external call, the process flows like this:\n\n1. **Role Check**: The system first uses `hasRole(CALLER_ROLE, caller)` to verify the caller has basic permission\n2. **Call Verification**: The `verifyCall` function validates the specific action using one of four verification methods\n3. **Protocol Verification**: For protocol-specific actions, custom verifiers add additional validation layers\n4. **Consensus (if required)**: For critical operations, multiple signatures may be required via the `Consensus` contract\n\nThis layered approach ensures comprehensive security while maintaining flexibility for different use cases.",
+      "title": "",
+      "id": "64846"
+    },
+    {
+      "type": "textOnly",
+      "description": "**When to Use Each Verification Type**\n\n*   `ONCHAIN_COMPACT`: Best for frequently used, pre-approved function calls. Higher gas to set up but cheaper to verify.\n\n*   `MERKLE_COMPACT`: Ideal for batches of similar function calls where you want to approve the function but not specific parameters.\n\n*   `MERKLE_EXTENDED`: Perfect for one-time or rare operations where you need to validate the complete transaction including all parameters.\n\n*   `CUSTOM_VERIFIER`: Designed for protocol-specific logic like the `ERC20Verifier`'s recipient validation or complex multi-step operations.",
+      "title": "",
+      "id": "64847"
+    },
+    {
+      "type": "textOnly",
+      "description": "**Summary**\n\nThe Mellow Permissions system provides a security framework through three core components:\n\n*   **MellowACL** manages role-based access control with role tracking and inherits standard `hasRole`/`grantRole` functions\n*   **Verifier** authorizes external calls using multiple verification methods via the central `verifyCall` function\n*   **Consensus** enables multisignature validation for critical operations\n\nProtocol-specific verifiers like `ERC20Verifier` show how this framework extends to handle specialized DeFi protocols while maintaining security guarantees. Together, these components ensure that vault operations are properly authorized through multiple layers of security checks.",
+      "title": "",
+      "id": "64848"
+    }
+  ]
+}

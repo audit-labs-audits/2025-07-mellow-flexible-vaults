@@ -1,0 +1,211 @@
+{
+  "title": "2.3: The `Factory.sol` Implementation",
+  "id": "2y/2+YWGvy73tEmqSt4bn44q0mlZRoH5RVumfdkvh9A=",
+  "originalId": 5242,
+  "position": 4,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "Welcome to the `Factory.sol` implementation walkthrough! This tour will guide you through the concrete implementation of the `Factory` contract, showing how it manages different **implementation versions** and deploys new **proxy instances** using a **governance-based approach**.",
+      "title": "",
+      "id": "64514"
+    },
+    {
+      "type": "revealFiles",
+      "files": [
+        "flexible-vaults/src/factories/Factory.sol"
+      ],
+      "description": "The `Factory.sol` contract is the main factory implementation that manages deployable upgradeable proxies. It implements both the `IFactory` and `IFactoryEntity` interfaces and uses OpenZeppelin's `OwnableUpgradeable` pattern for access control.",
+      "title": "",
+      "id": "64515",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The factory uses a unique storage pattern with an immutable slot calculated using the `SlotLibrary`. This slot is computed from the **contract name**, **factory name**, and **version**, ensuring no storage collisions between different factory instances.",
+      "file": "flexible-vaults/src/factories/Factory.sol",
+      "highlight": [
+        {
+          "start": 11,
+          "end": 16
+        }
+      ],
+      "title": "",
+      "id": "64516",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The core storage structure uses `EnumerableSet` to manage three key collections: deployed entities (`proxies`), accepted implementations, and pending proposals. The `blacklist` mapping tracks which versions are disabled.",
+      "file": "flexible-vaults/src/interfaces/factories/IFactory.sol",
+      "highlight": [
+        {
+          "start": 27,
+          "end": 33
+        }
+      ],
+      "title": "",
+      "id": "64517",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The `_factoryStorage()` function uses inline assembly to access the custom storage slot. This pattern allows multiple factory instances to coexist without storage conflicts, as each has its own unique slot.",
+      "file": "flexible-vaults/src/factories/Factory.sol",
+      "highlight": [
+        {
+          "start": 125,
+          "end": 130
+        }
+      ],
+      "title": "",
+      "id": "64518",
+      "hideAreas": []
+    },
+    {
+      "type": "mcq",
+      "description": "What is the primary architectural reason for using the `_factoryStorageSlot` and the `_factoryStorage()` assembly function instead of standard state variables for `FactoryStorage`?\n\nOptions:\n\n A). To enable multiple, independent `Factory` instances to be deployed as proxies, each with its own non-colliding storage.\n\nB). To reduce the gas cost of reading from storage by using a direct slot pointer.\n\nC). To enforce a stricter access control mechanism than `private` variables allow.\n\nD). To make the `FactoryStorage` struct data immutable after the factory is constructed.\n\n\nCorrect: A). To enable multiple, independent `Factory` instances to be deployed as proxies, each with its own non-colliding storage.\n\nExplanation: This pattern allows each factory, when deployed as a proxy, to have its own distinct storage space. The `_factoryStorageSlot` is calculated uniquely for each factory instance in its constructor, preventing storage collisions if multiple factories are managed by another contract. While there might be gas implications, the main driver is architectural separation of state. The data at the storage slot remains mutable, and access control is handled by standard function visibility, not this pattern.",
+      "title": "",
+      "id": "64530",
+      "text": "What is the primary architectural reason for using the `_factoryStorageSlot` and the `_factoryStorage()` assembly function instead of standard state variables for `FactoryStorage`?",
+      "answers": [
+        "To enable multiple, independent `Factory` instances to be deployed as proxies, each with its own non-colliding storage.",
+        "To reduce the gas cost of reading from storage by using a direct slot pointer.",
+        "To enforce a stricter access control mechanism than `private` variables allow.",
+        "To make the `FactoryStorage` struct data immutable after the factory is constructed."
+      ],
+      "correct": 0,
+      "explanation": "This pattern allows each factory, when deployed as a proxy, to have its own distinct storage space. The `_factoryStorageSlot` is calculated uniquely for each factory instance in its constructor, preventing storage collisions if multiple factories are managed by another contract. While there might be gas implications, the main driver is architectural separation of state. The data at the storage slot remains mutable, and access control is handled by standard function visibility, not this pattern."
+    },
+    {
+      "type": "textOnly",
+      "description": "Implementation management in this factory uses a **governance-based approach** where implementations must first be proposed and then accepted by the owner, rather than being directly added.",
+      "title": "",
+      "id": "64519"
+    },
+    {
+      "type": "highlight",
+      "description": "The `proposeImplementation` function allows anyone to propose a new implementation contract. It performs validation to ensure the implementation isn't already accepted or proposed, then adds it to the proposals set.",
+      "file": "flexible-vaults/src/factories/Factory.sol",
+      "highlight": [
+        {
+          "start": 79,
+          "end": 90
+        }
+      ],
+      "title": "",
+      "id": "64520",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The `acceptProposedImplementation` function is restricted to the owner (line 93). It moves an implementation from the `proposals` set to the `implementations` set, making it available for deployment. This two-step process provides governance control over which implementations can be used.",
+      "file": "flexible-vaults/src/factories/Factory.sol",
+      "highlight": [
+        {
+          "start": 92,
+          "end": 101
+        }
+      ],
+      "title": "",
+      "id": "64521",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The `setBlacklistStatus` function allows the owner to disable specific implementation versions without removing them entirely. This provides a safety mechanism if issues are discovered with a particular version.",
+      "file": "flexible-vaults/src/factories/Factory.sol",
+      "highlight": [
+        {
+          "start": 69,
+          "end": 77
+        }
+      ],
+      "title": "",
+      "id": "64522",
+      "hideAreas": []
+    },
+    {
+      "type": "textOnly",
+      "description": "The `create` function is the heart of the factory, responsible for deploying new proxy instances. Let's examine its implementation step by step.",
+      "title": "",
+      "id": "64523"
+    },
+    {
+      "type": "highlight",
+      "description": "The **create** function begins with validation: it checks that the version exists (line 106-108) and isn't blacklisted (line 109-111). The version parameter is an index into the `implementations set`, not a direct `implementation address`.",
+      "file": "flexible-vaults/src/factories/Factory.sol",
+      "highlight": [
+        {
+          "start": 104,
+          "end": 112
+        }
+      ],
+      "title": "",
+      "id": "64524",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The factory retrieves the implementation address from the `EnumerableSet` (line 112), then creates a deterministic salt using the `version`, `owner`, `initialization parameters`, and current `entity count` (line 113). This salt ensures predictable addresses while preventing collisions.",
+      "file": "flexible-vaults/src/factories/Factory.sol",
+      "highlight": [
+        {
+          "start": 112,
+          "end": 118
+        }
+      ],
+      "title": "",
+      "id": "64525",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The actual deployment uses `OpenZeppelin`'s `TransparentUpgradeableProxy` with **CREATE2** deployment. The proxy is configured with the implementation address, owner, and initialization call data that invokes the `IFactoryEntity.initialize` function.",
+      "file": "flexible-vaults/src/factories/Factory.sol",
+      "highlight": [
+        {
+          "start": 114,
+          "end": 118
+        }
+      ],
+      "title": "",
+      "id": "64526",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "After deployment, the new proxy instance is added to the entities set for tracking, and a `Created` event is emitted with all relevant deployment information. This completes the proxy creation process.",
+      "file": "flexible-vaults/src/factories/Factory.sol",
+      "highlight": [
+        {
+          "start": 119,
+          "end": 121
+        }
+      ],
+      "title": "",
+      "id": "64527",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The factory itself implements `IFactoryEntity` and can be initialized with owner data. This allows factories to be deployed through other factories, creating a hierarchical factory system.",
+      "file": "flexible-vaults/src/factories/Factory.sol",
+      "highlight": [
+        {
+          "start": 62,
+          "end": 67
+        }
+      ],
+      "title": "",
+      "id": "64528",
+      "hideAreas": []
+    },
+    {
+      "type": "textOnly",
+      "description": "The `Factory.sol` implementation uses a proxy deployment pattern with governance controls and blacklisting capabilities. This approach provides administrative oversight over which implementations can be deployed, while maintaining flexibility for future upgrades.",
+      "title": "",
+      "id": "64529"
+    }
+  ]
+}

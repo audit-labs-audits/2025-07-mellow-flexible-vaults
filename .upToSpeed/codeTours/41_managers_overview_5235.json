@@ -1,0 +1,119 @@
+{
+  "title": "4.1: Managers: Overview",
+  "id": "YxLPS6sUq19kUGk2ySSivCwuPIxX4wey1ut0U2LKd98=",
+  "originalId": 5235,
+  "position": 7,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "Welcome to our walkthrough of the three manager types in the Flexible Vaults system. We'll explore how `ShareManager`, `FeeManager`, and `RiskManager` work together to provide comprehensive vault functionality.",
+      "title": "",
+      "id": "65243"
+    },
+    {
+      "type": "highlight",
+      "description": "The file tree shows three interfaces in `/interfaces/managers/` (`IShareManager`, `IFeeManager`, `IRiskManager`) and five implementations in `/managers/`. Here's `BasicShareManager` extending `ShareManager`—this pattern separates contract specifications from their concrete implementations, allowing multiple share management strategies.",
+      "file": "flexible-vaults/src/managers/BasicShareManager.sol",
+      "highlight": [
+        {
+          "start": 1,
+          "end": 13
+        }
+      ],
+      "title": "",
+      "id": "65244",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The `VaultConfigurator` orchestrates manager creation and integration: lines 53-56 show `factory.create()` calls instantiating each manager with custom parameters, then lines 70-72 establish bidirectional relationships by calling `setVault()` on each manager after vault creation.",
+      "file": "flexible-vaults/src/vaults/VaultConfigurator.sol",
+      "highlight": [
+        {
+          "start": 53,
+          "end": 72
+        }
+      ],
+      "title": "",
+      "id": "65245",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The Vault's `initialize` function demonstrates architectural separation: `ShareModule` (line 46) receives `shareManager`, `feeManager`, and `oracle` for user-facing operations, while `VaultModule` (line 48) gets `riskManager` for internal balance controls. This modular design isolates responsibilities.",
+      "file": "flexible-vaults/src/vaults/Vault.sol",
+      "highlight": [
+        {
+          "start": 32,
+          "end": 48
+        }
+      ],
+      "title": "",
+      "id": "65246",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "**ShareManagerStorage** reveals share management integration: the **vault address** enables callbacks, **bitpacked flags** store multiple permissions in a single variable, **allocatedShares** coordinates with deposit queues, and the **per-account mapping** supports controls for individual users. The **Merkle root** enables whitelist verification.",
+      "file": "flexible-vaults/src/interfaces/managers/IShareManager.sol",
+      "highlight": [
+        {
+          "start": 51,
+          "end": 63
+        }
+      ],
+      "title": "",
+      "id": "65247",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "`FeeManagerStorage` shows vault-aware fee coordination: `feeRecipient` collects all fees, four D6-precision fees (1e6 = 100%) handle different scenarios, per-vault timestamps track protocol fee accrual, `minPriceD18` triggers performance fees on price increases, and `baseAsset` mappings enable vault-specific calculations.",
+      "file": "flexible-vaults/src/interfaces/managers/IFeeManager.sol",
+      "highlight": [
+        {
+          "start": 21,
+          "end": 30
+        }
+      ],
+      "title": "",
+      "id": "65248",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "`RiskManagerStorage` implements comprehensive risk controls: `vault` address enables integration, `vaultState` tracks current vs. maximum balances (the **State** `struct` contains balance and limit fields), `pendingBalance` monitors deposit queue inflows, and per-subvault mappings manage allowed assets and individual limits.",
+      "file": "flexible-vaults/src/interfaces/managers/IRiskManager.sol",
+      "highlight": [
+        {
+          "start": 45,
+          "end": 54
+        }
+      ],
+      "title": "",
+      "id": "65249",
+      "hideAreas": []
+    },
+    {
+      "type": "textOnly",
+      "description": "These three managers form an integrated system:\n\n**`ShareManager`**: Handles user share accounting, minting/burning, permissions, whitelists, and lockup enforcement during deposits and transfers.\n\n**`FeeManager`**: Captures value through deposit/redeem fees (applied immediately) and performance/protocol fees (triggered by price changes and time passage).\n\n**`RiskManager`**: Enforces safety through TVL limits, tracks pending inflows from deposit queues, and controls which assets each subvault can interact with.\n\nTogether, they provide user access control, economic incentives, and risk management for the vault ecosystem.",
+      "title": "",
+      "id": "65250"
+    },
+    {
+      "type": "mcq",
+      "description": "A **vault operator** wants to implement two new **policies**: 1) Restrict **deposits** to a list of **pre-approved addresses**, and 2) Introduce a 0.1% fee on all new **deposits**. Which **managers** must be configured to implement these changes?\n\nOptions:\n\n A). RiskManager and FeeManager\n\nB). ShareManager and FeeManager\n\nC). ShareManager and RiskManager\n\nD). Only FeeManager\n\n\nCorrect: B). ShareManager and FeeManager\n\nExplanation: Correct. `ShareManager` is responsible for user-level permissions, including whitelists, as indicated by its `whitelistMerkleRoot` and `accounts` mapping. `FeeManager` handles all economic calculations, including the `depositFeeD6`. `RiskManager` focuses on systemic risks like total value locked (TVL) and asset exposure, not individual user permissions or standard fees.",
+      "title": "",
+      "id": "65251",
+      "text": "A **vault operator** wants to implement two new **policies**: 1) Restrict **deposits** to a list of **pre-approved addresses**, and 2) Introduce a 0.1% fee on all new **deposits**. Which **managers** must be configured to implement these changes?",
+      "answers": [
+        "RiskManager and FeeManager",
+        "ShareManager and FeeManager",
+        "ShareManager and RiskManager",
+        "Only FeeManager"
+      ],
+      "correct": 1,
+      "explanation": "Correct. `ShareManager` is responsible for user-level permissions, including whitelists, as indicated by its `whitelistMerkleRoot` and `accounts` mapping. `FeeManager` handles all economic calculations, including the `depositFeeD6`. `RiskManager` focuses on systemic risks like total value locked (TVL) and asset exposure, not individual user permissions or standard fees."
+    }
+  ]
+}

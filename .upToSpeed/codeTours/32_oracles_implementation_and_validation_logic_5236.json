@@ -1,0 +1,183 @@
+{
+  "title": "3.2: Oracles: Implementation and Validation Logic",
+  "id": "ySVmSb2ZHl3gU8tLXg2MNVpVkKrGwaQSXToms4isOzA=",
+  "originalId": 5236,
+  "position": 6,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "Welcome to the Oracle implementation walkthrough. This tour examines the concrete implementation of the `Oracle.sol` contract, diving into its state management, security measures, and price validation logic.\n\nWe'll explore how this contract uses the diamond storage pattern to prevent storage collisions and see how it validates price reports with sophisticated security checks.",
+      "title": "",
+      "id": "64412"
+    },
+    {
+      "type": "highlight",
+      "description": "The Oracle contract inherits from `IOracle`, `ContextUpgradeable`, and `ReentrancyGuardUpgradeable`. This gives it the interface compliance, upgradeability features, and protection against reentrancy attacks.",
+      "file": "flexible-vaults/src/oracles/Oracle.sol",
+      "highlight": [
+        {
+          "start": 8,
+          "end": 9
+        }
+      ],
+      "title": "",
+      "id": "64413",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "Here's the key to the diamond storage pattern: the `_oracleStorageSlot` variable. This immutable slot identifier ensures that the contract's storage is isolated and collision-free, a common practice for upgradeable contracts.",
+      "file": "flexible-vaults/src/oracles/Oracle.sol",
+      "highlight": [
+        {
+          "start": 22,
+          "end": 22
+        }
+      ],
+      "title": "",
+      "id": "64414",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "In the constructor, the storage slot is initialized using `SlotLibrary.getSlot()` with the contract name and version. This creates a unique storage location that won't conflict with other contracts in an upgradeable system.",
+      "file": "flexible-vaults/src/oracles/Oracle.sol",
+      "highlight": [
+        {
+          "start": 31,
+          "end": 34
+        }
+      ],
+      "title": "",
+      "id": "64415",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The `_oracleStorage()` function provides convenient access to the storage struct. It uses inline assembly to retrieve the storage reference from the calculated slot. This completes the **diamond storage pattern** implementation.",
+      "file": "flexible-vaults/src/oracles/Oracle.sol",
+      "highlight": [
+        {
+          "start": 242,
+          "end": 247
+        }
+      ],
+      "title": "",
+      "id": "64416",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The access control implementation is particularly interesting. Notice the check on line 25. The `Oracle` doesn't manage its own permissions. Instead, it delegates the `hasRole` check to the associated `Vault` contract. This design keeps all permission logic centralized within the `Vault`, simplifying management.",
+      "file": "flexible-vaults/src/oracles/Oracle.sol",
+      "highlight": [
+        {
+          "start": 24,
+          "end": 29
+        }
+      ],
+      "title": "",
+      "id": "64417",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The `submitReports` function orchestrates the report submission flow. It loads security parameters and vault data into memory, then processes each report through `_handleReport`. It only calls `vault.handleReport()` on line 117 if the report is valid and not suspicious (when `_handleReport` returns true).",
+      "file": "flexible-vaults/src/oracles/Oracle.sol",
+      "highlight": [
+        {
+          "start": 103,
+          "end": 121
+        }
+      ],
+      "title": "",
+      "id": "64418",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The `_handleReport` function is the central controller for processing individual reports. It first checks the timeout to prevent spam (line 180), then validates the price. If validation passes, it updates the storage and returns whether the report is safe for immediate processing by the vault.",
+      "file": "flexible-vaults/src/oracles/Oracle.sol",
+      "highlight": [
+        {
+          "start": 176,
+          "end": 191
+        }
+      ],
+      "title": "",
+      "id": "64419",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "This is the heart of the Oracle: the **_validatePrice_** function. Let's break down its logic:\n\n- **Lines 199-201**: Base case - the first report for any asset is valid but suspicious\n- **Lines 202-203**: Calculate absolute and relative price deviations\n- **Lines 204-206**: Reject prices exceeding max thresholds\n- **Lines 207-209**: Keep reports suspicious if the previous one was suspicious\n- **Lines 210-215**: Mark as suspicious if exceeding suspicious thresholds but within max limits",
+      "file": "flexible-vaults/src/oracles/Oracle.sol",
+      "highlight": [
+        {
+          "start": 193,
+          "end": 217
+        }
+      ],
+      "title": "",
+      "id": "64420",
+      "hideAreas": []
+    },
+    {
+      "type": "mcq",
+      "description": "In the `_validatePrice` function, how is the very first price report for an asset (where `prevPriceD18` is `0`) handled?\n\nOptions:\n\n A). It is considered valid and not suspicious, establishing a trusted baseline price.\n\nB). It is considered valid but is automatically flagged as suspicious.\n\nC). It is considered invalid and the transaction reverts immediately.\n\nD). The function reverts due to a potential division-by-zero error.\n\n\nCorrect: B). It is considered valid but is automatically flagged as suspicious.\n\nExplanation: The correct answer is that the report is considered valid but is flagged as suspicious. Lines 199-201 of `_validatePrice` explicitly handle this base case: `if (prevPriceD18 == 0) { return (true, true); }`. This design ensures that the initial price for any asset requires manual review via `acceptReport` before it is fully trusted by the system, preventing a malicious actor from setting a bad initial price.",
+      "title": "",
+      "id": "64432",
+      "text": "In the `_validatePrice` function, how is the very first price report for an asset (where `prevPriceD18` is `0`) handled?",
+      "answers": [
+        "It is considered valid and not suspicious, establishing a trusted baseline price.",
+        "It is considered valid but is automatically flagged as suspicious.",
+        "It is considered invalid and the transaction reverts immediately.",
+        "The function reverts due to a potential division-by-zero error."
+      ],
+      "correct": 1,
+      "explanation": "The correct answer is that the report is considered valid but is flagged as suspicious. Lines 199-201 of `_validatePrice` explicitly handle this base case: `if (prevPriceD18 == 0) { return (true, true); }`. This design ensures that the initial price for any asset requires manual review via `acceptReport` before it is fully trusted by the system, preventing a malicious actor from setting a bad initial price."
+    },
+    {
+      "type": "highlight",
+      "description": "When a report is flagged as suspicious, the `acceptReport` function allows manual override. A user with `ACCEPT_REPORT_ROLE` can clear the suspicious flag and trigger vault processing. Notice line 136: this is where the delayed `vault.handleReport` call finally happens for suspicious reports.",
+      "file": "flexible-vaults/src/oracles/Oracle.sol",
+      "highlight": [
+        {
+          "start": 124,
+          "end": 140
+        }
+      ],
+      "title": "",
+      "id": "64421",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The initialization function decodes the setup parameters and calls internal functions to set security parameters and add supported assets. This establishes the **Oracle**'s configuration during deployment.",
+      "file": "flexible-vaults/src/oracles/Oracle.sol",
+      "highlight": [
+        {
+          "start": 168,
+          "end": 174
+        }
+      ],
+      "title": "",
+      "id": "64422",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "Finally, the `setVault` function establishes the link between the `Oracle` and its associated `Vault`. This connection enables price reporting and access control delegation. Notice the check on line 95 that prevents re-initialization.",
+      "file": "flexible-vaults/src/oracles/Oracle.sol",
+      "highlight": [
+        {
+          "start": 90,
+          "end": 100
+        }
+      ],
+      "title": "",
+      "id": "64423",
+      "hideAreas": []
+    }
+  ]
+}

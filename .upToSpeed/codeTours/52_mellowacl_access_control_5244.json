@@ -1,0 +1,211 @@
+{
+  "title": "5.2: MellowACL: Access Control",
+  "id": "mgXkoJxj9I5b9pZmEHNMx9fCHzx1jjDIekSWD1MBK4c=",
+  "originalId": 5244,
+  "position": 13,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "This walkthrough explores the `MellowACL` system, which provides **role-based access control** for the `Mellow vault architecture`. We'll examine how roles are defined, managed, and used throughout the system to secure critical operations.",
+      "title": "",
+      "id": "64444"
+    },
+    {
+      "type": "revealFiles",
+      "files": [
+        "flexible-vaults/src/interfaces/permissions/IMellowACL.sol"
+      ],
+      "description": "The `IMellowACL` interface extends **OpenZeppelin**'s `AccessControlEnumerable` with additional functionality to track which roles are actively in use. This interface defines the contract for managing permissions in the Mellow system.",
+      "title": "",
+      "id": "64445",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The `MellowACLStorage` struct contains an `EnumerableSet` of `bytes32` values representing roles that have at least one member assigned. This allows the system to efficiently track which roles are currently active.",
+      "file": "flexible-vaults/src/interfaces/permissions/IMellowACL.sol",
+      "highlight": [
+        {
+          "start": 10,
+          "end": 12
+        }
+      ],
+      "title": "",
+      "id": "64446",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The interface provides view functions to query active roles. Line 15 returns the total count of active roles, line 20 retrieves a specific role by index, and line 25 checks if a role is currently active.",
+      "file": "flexible-vaults/src/interfaces/permissions/IMellowACL.sol",
+      "highlight": [
+        {
+          "start": 14,
+          "end": 25
+        }
+      ],
+      "title": "",
+      "id": "64447",
+      "hideAreas": []
+    },
+    {
+      "type": "revealFiles",
+      "files": [
+        "flexible-vaults/src/permissions/MellowACL.sol"
+      ],
+      "description": "The `MellowACL` contract implements the `IMellowACL` interface and provides the core access control functionality. It extends OpenZeppelin's `AccessControlEnumerableUpgradeable` with role tracking capabilities.",
+      "title": "",
+      "id": "64448",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The contract uses a **storage slot pattern** for **upgradeable contracts**. **Line 11** defines an **immutable storage slot** calculated from the **contract name** and **version**, ensuring storage layout consistency across upgrades.",
+      "file": "flexible-vaults/src/permissions/MellowACL.sol",
+      "highlight": [
+        {
+          "start": 11,
+          "end": 16
+        }
+      ],
+      "title": "",
+      "id": "64449",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "These **view functions** implement the **interface** by accessing the `MellowACLStorage`. They delegate to the `EnumerableSet` operations to provide information about active roles without exposing the internal storage structure.",
+      "file": "flexible-vaults/src/permissions/MellowACL.sol",
+      "highlight": [
+        {
+          "start": 21,
+          "end": 33
+        }
+      ],
+      "title": "",
+      "id": "64450",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The `_grantRole` function overrides `OpenZeppelin`'s implementation to track role usage. When a role is granted successfully (line 38), it adds the role to the supported roles set (line 39) and emits a **RoleAdded** event if this is the first time the role is used.",
+      "file": "flexible-vaults/src/permissions/MellowACL.sol",
+      "highlight": [
+        {
+          "start": 37,
+          "end": 45
+        }
+      ],
+      "title": "",
+      "id": "64451",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The `_revokeRole` function handles role removal and cleanup. After successfully revoking a role (line 48), it checks if the role has no remaining members (line 49). If so, it removes the role from the supported roles set and emits a `RoleRemoved` event.",
+      "file": "flexible-vaults/src/permissions/MellowACL.sol",
+      "highlight": [
+        {
+          "start": 47,
+          "end": 56
+        }
+      ],
+      "title": "",
+      "id": "64452",
+      "hideAreas": []
+    },
+    {
+      "type": "mcq",
+      "description": "According to the `_revokeRole` implementation in `MellowACL.sol`, what happens when the role of the last member is revoked?\n\nOptions:\n\n A). The role's member count is updated, but the role remains in the `supportedRoles` set to track its historical usage.\n\nB). The role is removed from the `supportedRoles` set, and a `RoleRemoved` event is emitted.\n\nC). The transaction reverts because `getRoleMemberCount` is called before the role is actually revoked by `super._revokeRole`.\n\nD). Only the `RoleRevoked` event from the parent `AccessControlEnumerableUpgradeable` is emitted.\n\n\nCorrect: B). The role is removed from the `supportedRoles` set, and a `RoleRemoved` event is emitted.\n\nExplanation: The correct answer is that the role is removed from `supportedRoles` and the `RoleRemoved` event is emitted. The `_revokeRole` function first calls `super._revokeRole`, which handles the actual revocation. Afterwards, it checks if `getRoleMemberCount(role)` is zero. If it is, the function proceeds to remove the role from the `supportedRoles` set and emit the `RoleRemoved` event, cleaning up the active role tracking.",
+      "title": "",
+      "id": "64460",
+      "text": "According to the `_revokeRole` implementation in `MellowACL.sol`, what happens when the role of the last member is revoked?",
+      "answers": [
+        "The role's member count is updated, but the role remains in the `supportedRoles` set to track its historical usage.",
+        "The role is removed from the `supportedRoles` set, and a `RoleRemoved` event is emitted.",
+        "The transaction reverts because `getRoleMemberCount` is called before the role is actually revoked by `super._revokeRole`.",
+        "Only the `RoleRevoked` event from the parent `AccessControlEnumerableUpgradeable` is emitted."
+      ],
+      "correct": 1,
+      "explanation": "The correct answer is that the role is removed from `supportedRoles` and the `RoleRemoved` event is emitted. The `_revokeRole` function first calls `super._revokeRole`, which handles the actual revocation. Afterwards, it checks if `getRoleMemberCount(role)` is zero. If it is, the function proceeds to remove the role from the `supportedRoles` set and emit the `RoleRemoved` event, cleaning up the active role tracking."
+    },
+    {
+      "type": "highlight",
+      "description": "The `_mellowACLStorage` function provides access to the contract's storage using inline assembly. This pattern ensures the **storage struct** is located at the correct slot while maintaining type safety.",
+      "file": "flexible-vaults/src/permissions/MellowACL.sol",
+      "highlight": [
+        {
+          "start": 58,
+          "end": 63
+        }
+      ],
+      "title": "",
+      "id": "64453",
+      "hideAreas": []
+    },
+    {
+      "type": "textOnly",
+      "description": "`OpenZeppelin's AccessControlEnumerableUpgradeable` provides the foundational access control functionality, including the `DEFAULT_ADMIN_ROLE`. This special role has the authority to grant and revoke all other roles in the system.",
+      "title": "",
+      "id": "64454"
+    },
+    {
+      "type": "highlight",
+      "description": "The `ACLModule` initialization demonstrates how the `DEFAULT_ADMIN_ROLE` is assigned. Line 20 grants the `DEFAULT_ADMIN_ROLE` to the specified admin address, giving them complete control over the system's permissions.",
+      "file": "flexible-vaults/src/modules/ACLModule.sol",
+      "highlight": [
+        {
+          "start": 16,
+          "end": 21
+        }
+      ],
+      "title": "",
+      "id": "64455",
+      "hideAreas": []
+    },
+    {
+      "type": "revealFiles",
+      "files": [
+        "flexible-vaults/src/modules/VaultModule.sol"
+      ],
+      "description": "The `VaultModule` showcases how **roles** are defined and used in practice. It defines several specific **roles** for different vault operations and uses them to protect sensitive functions.",
+      "title": "",
+      "id": "64456",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "Roles are defined as constants using `keccak256` hashes of descriptive strings. Line 16 defines `CREATE_SUBVAULT_ROLE`, which controls who can create new `subvaults`. Each role has a unique identifier derived from its name.",
+      "file": "flexible-vaults/src/modules/VaultModule.sol",
+      "highlight": [
+        {
+          "start": 16,
+          "end": 24
+        }
+      ],
+      "title": "",
+      "id": "64457",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The `createSubvault` function demonstrates role-based access control in action. Line 66 uses the `onlyRole` modifier with `CREATE_SUBVAULT_ROLE`, ensuring only addresses with this role can create subvaults. This protects a critical vault operation from unauthorized access.",
+      "file": "flexible-vaults/src/modules/VaultModule.sol",
+      "highlight": [
+        {
+          "start": 64,
+          "end": 79
+        }
+      ],
+      "title": "",
+      "id": "64458",
+      "hideAreas": []
+    },
+    {
+      "type": "textOnly",
+      "description": "The **MellowACL** system provides an access control framework that builds upon `OpenZeppelin`'s patterns while adding role tracking capabilities. This enables fine-grained permission management across the entire **Mellow vault** ecosystem.",
+      "title": "",
+      "id": "64459"
+    }
+  ]
+}

@@ -1,0 +1,154 @@
+{
+  "title": "3.1: Oracles: Interface and Concepts",
+  "id": "xVvvXgd5S+RQrQ31aP6c4l+s4W1c2Q3NFWIcZ5h0opM=",
+  "originalId": 5234,
+  "position": 5,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "This tour provides a high-level overview of the Mellow Oracle system, focusing on its public interface as defined in `IOracle.sol`. The goal is to understand the Oracle's responsibilities, the data it manages, and how other contracts are expected to interact with it, without diving into the specific implementation details.",
+      "title": "",
+      "id": "64743"
+    },
+    {
+      "type": "highlight",
+      "description": "This interface defines the public-facing functions for the vault's price oracle. As the comments here explain, its main responsibility is to handle the submission, validation, and propagation of price reports. The `@dev` comments on lines 16 and 17 are particularly important, as they describe the core mathematical invariant the oracle maintains and its role in coordinating operations across the vault's components.",
+      "file": "flexible-vaults/src/interfaces/oracles/IOracle.sol",
+      "highlight": [
+        {
+          "start": 14,
+          "end": 17
+        }
+      ],
+      "title": "",
+      "id": "64744",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The `OracleStorage` struct represents the data the Oracle needs to track. It holds a reference to the `vault` it serves, its `securityParams`, the list of `supportedAssets`, and the latest `reports` for each of those assets.",
+      "file": "flexible-vaults/src/interfaces/oracles/IOracle.sol",
+      "highlight": [
+        {
+          "start": 83,
+          "end": 88
+        }
+      ],
+      "title": "",
+      "id": "64745",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The `SecurityParams` struct is fundamental to the oracle's security model.\n- `maxAbsoluteDeviation`: The maximum absolute price change allowed before a report is rejected.\n- `suspiciousAbsoluteDeviation`: The absolute price change threshold that flags a report as suspicious.\n- `maxRelativeDeviationD18`: The maximum relative price change (as a percentage in 18 decimals) allowed before a report is rejected.\n- `suspiciousRelativeDeviationD18`: The relative price change threshold that flags a report as suspicious.\n- `timeout`: The minimum time that must pass between valid, non-suspicious reports.\n- `depositInterval`: The minimum age of a deposit request to be eligible for processing.\n- `redeemInterval`: The minimum age of a redemption request to be eligible for processing.",
+      "file": "flexible-vaults/src/interfaces/oracles/IOracle.sol",
+      "highlight": [
+        {
+          "start": 48,
+          "end": 66
+        }
+      ],
+      "title": "",
+      "id": "64746",
+      "hideAreas": []
+    },
+    {
+      "type": "mcq",
+      "description": "An oracle has a last reported price of `100e18` for an asset. The `SecurityParams` are configured with `suspiciousRelativeDeviationD18` at `0.05e18` (5%) and `maxRelativeDeviationD18` at `0.10e18` (10%). A price reporter submits a new price of `106e18`. What is the outcome of this submission?\n\nOptions:\n\n A). The report is rejected because the price deviation exceeds the suspicious threshold.\n\nB). The report is accepted but flagged as suspicious, and queues are not processed until it is approved.\n\nC). The report is accepted and processed immediately because it is within the maximum deviation limit.\n\n\nCorrect: C). The report is accepted and processed immediately because it is within the maximum deviation limit.\n\nExplanation: The new price of `106e18` represents a 6% relative deviation from the previous price of `100e18`. This is greater than the `suspiciousRelativeDeviationD18` (5%) but less than the `maxRelativeDeviationD18` (10%). Therefore, the oracle accepts the report but flags it as suspicious. A suspicious report prevents the automatic processing of deposits and redemptions until a privileged account with `ACCEPT_REPORT_ROLE` manually approves it.",
+      "title": "",
+      "id": "64753",
+      "text": "An oracle has a last reported price of `100e18` for an asset. The `SecurityParams` are configured with `suspiciousRelativeDeviationD18` at `0.05e18` (5%) and `maxRelativeDeviationD18` at `0.10e18` (10%). A price reporter submits a new price of `106e18`. What is the outcome of this submission?",
+      "answers": [
+        "The report is rejected because the price deviation exceeds the suspicious threshold.",
+        "The report is accepted but flagged as suspicious, and queues are not processed until it is approved.",
+        "The report is accepted and processed immediately because it is within the maximum deviation limit."
+      ],
+      "correct": 2,
+      "explanation": "The new price of `106e18` represents a 6% relative deviation from the previous price of `100e18`. This is greater than the `suspiciousRelativeDeviationD18` (5%) but less than the `maxRelativeDeviationD18` (10%). Therefore, the oracle accepts the report but flags it as suspicious. A suspicious report prevents the automatic processing of deposits and redemptions until a privileged account with `ACCEPT_REPORT_ROLE` manually approves it."
+    },
+    {
+      "type": "highlight",
+      "description": "The `Report` struct is the simple structure used for submitting new prices. The `DetailedReport` is what the Oracle uses internally to store additional context, such as the `timestamp` and an `isSuspicious` flag.",
+      "file": "flexible-vaults/src/interfaces/oracles/IOracle.sol",
+      "highlight": [
+        {
+          "start": 69,
+          "end": 80
+        }
+      ],
+      "title": "",
+      "id": "64747",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The `submitReports` function is the primary entry point for price reporters to push new data into the system. This is a permissioned action, requiring the `SUBMIT_REPORTS_ROLE`.",
+      "file": "flexible-vaults/src/interfaces/oracles/IOracle.sol",
+      "highlight": [
+        {
+          "start": 141,
+          "end": 141
+        }
+      ],
+      "title": "",
+      "id": "64748",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "`validatePrice` is a public, read-only function that allows any external actor to check if a potential price would be considered valid or suspicious according to the oracle's current security configuration. This is useful for pre-validating prices off-chain.",
+      "file": "flexible-vaults/src/interfaces/oracles/IOracle.sol",
+      "highlight": [
+        {
+          "start": 132,
+          "end": 132
+        }
+      ],
+      "title": "",
+      "id": "64749",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "If a report is flagged as suspicious, it isn't processed automatically. The `acceptReport` function provides a manual override for a privileged role (`ACCEPT_REPORT_ROLE`) to approve the price and allow the vault to process it.",
+      "file": "flexible-vaults/src/interfaces/oracles/IOracle.sol",
+      "highlight": [
+        {
+          "start": 148,
+          "end": 148
+        }
+      ],
+      "title": "",
+      "id": "64750",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "These functions define the roles for managing the oracle:\n- `SUBMIT_REPORTS_ROLE`: Can submit new price reports.\n- `ACCEPT_REPORT_ROLE`: Can accept a suspicious report.\n- `SET_SECURITY_PARAMS_ROLE`: Can modify the security parameters.\n- `ADD_SUPPORTED_ASSETS_ROLE`: Can add new assets to be tracked.\n- `REMOVE_SUPPORTED_ASSETS_ROLE`: Can remove assets from being tracked.",
+      "file": "flexible-vaults/src/interfaces/oracles/IOracle.sol",
+      "highlight": [
+        {
+          "start": 91,
+          "end": 103
+        }
+      ],
+      "title": "",
+      "id": "64751",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "Finally, the **oracle** emits events for significant state changes. This allows **off-chain services** or other **smart contracts** to reliably track all activity, such as when reports are submitted, parameters are changed, or assets are added/removed.",
+      "file": "flexible-vaults/src/interfaces/oracles/IOracle.sol",
+      "highlight": [
+        {
+          "start": 167,
+          "end": 182
+        }
+      ],
+      "title": "",
+      "id": "64752",
+      "hideAreas": []
+    }
+  ]
+}

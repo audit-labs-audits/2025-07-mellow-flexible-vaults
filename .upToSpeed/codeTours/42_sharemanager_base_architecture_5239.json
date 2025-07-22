@@ -1,0 +1,126 @@
+{
+  "title": "4.2: ShareManager: Base Architecture",
+  "id": "fIC5siibjBKejw5cYZib5+LCGNlP/5wYmB+Ad2CdnHY=",
+  "originalId": 5239,
+  "position": 8,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "This tour explores the core components of the share management system, focusing on the `IShareManager` interface and the `ShareManager` abstract contract. We will examine how they handle storage, permissions, and the lifecycle of shares.",
+      "title": "",
+      "id": "64424"
+    },
+    {
+      "type": "highlight",
+      "description": "The `ShareManagerStorage` struct is the blueprint for the state of any share manager.\n- `vault`: Links the manager to its vault.\n- `flags`: A bitmask for global settings like pauses and whitelists.\n- `allocatedShares`: Tracks shares that are pre-approved but not yet minted.\n- `whitelistMerkleRoot`: Stores the root of a Merkle tree for off-chain whitelist verification.\n- `accounts`: A mapping that holds per-user data like lockup status and blacklist flags.\n\nThis centralized storage is critical for ensuring that all permission checks and accounting are consistent and secure.",
+      "file": "flexible-vaults/src/interfaces/managers/IShareManager.sol",
+      "highlight": [
+        {
+          "start": 51,
+          "end": 62
+        }
+      ],
+      "title": "",
+      "id": "64425",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The `Flags` **struct** provides a human-readable representation of the `flags` bitmask from storage. Each boolean or integer corresponds to a specific global rule:\n\n- `hasMintPause`, `hasBurnPause`, `hasTransferPause`: Can halt core share operations.\n- `hasWhitelist`, `hasTransferWhitelist`: Enforce on-chain and off-chain access controls.\n- `globalLockup`: Sets a vault-wide, fixed time before which no shares can be moved.\n- `targetedLockup`: Applies a specific lockup duration to an account every time they mint new shares.",
+      "file": "flexible-vaults/src/interfaces/managers/IShareManager.sol",
+      "highlight": [
+        {
+          "start": 78,
+          "end": 93
+        }
+      ],
+      "title": "",
+      "id": "64426",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The system supports a two-step minting process.\n\n1.  `allocateShares`: A trusted **queue** contract pre-allocates a certain number of shares, increasing the `allocatedShares` counter. This reserves shares without assigning them to a specific user.\n2.  `mintAllocatedShares`: This function mints a portion of the pre-allocated shares to a specific user (`to`), reducing the `allocatedShares` counter.\n\nThis mechanism is useful for scenarios like vesting schedules or sales where the total number of available shares is determined in advance.",
+      "file": "flexible-vaults/src/interfaces/managers/IShareManager.sol",
+      "highlight": [
+        {
+          "start": 152,
+          "end": 163
+        }
+      ],
+      "title": "",
+      "id": "64427",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The `mint` and `burn` functions are the primary entry points for changing share supply. Access is strictly controlled: `mint` is restricted to the vault or an approved queue, while `burn` is exclusively managed by queue contracts for redemptions. Both functions also prevent zero-value transactions.",
+      "file": "flexible-vaults/src/interfaces/managers/IShareManager.sol",
+      "highlight": [
+        {
+          "start": 158,
+          "end": 163
+        }
+      ],
+      "title": "",
+      "id": "64428",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The `updateChecks` function acts as a security checkpoint that runs before any share movement. It takes a `from` and `to` address to understand the context of an operation (mint, burn, or transfer) and applies the relevant rules.\n\n- If `from` is not `address(0)` (transfer or burn), it checks for global and targeted lockups and whether the sender is blacklisted.\n- For transfers (`to` is also not `address(0)`), it additionally checks for transfer pauses and whitelist restrictions.\n- For mints (`from` is `address(0)`), it checks for minting pauses and whether the recipient is blacklisted or needs to be whitelisted.",
+      "file": "flexible-vaults/src/managers/ShareManager.sol",
+      "highlight": [
+        {
+          "start": 119,
+          "end": 162
+        }
+      ],
+      "title": "",
+      "id": "64429",
+      "hideAreas": []
+    },
+    {
+      "type": "mcq",
+      "description": "The `updateChecks` function enforces security rules for all share operations. When an existing shareholder (`from`) transfers shares to another address (`to`), which specific check is NOT performed on the recipient (`to`)?\n\nOptions:\n\n A). Verification of the recipient's `isBlacklisted` status.\n\nB). Verification of the global `hasTransferPause` flag.\n\nC). Verification of the recipient's `canTransfer` status if `hasTransferWhitelist` is enabled.\n\n\nCorrect: A). Verification of the recipient's `isBlacklisted` status.\n\nExplanation: The correct answer is the blacklist check. The `updateChecks` function logic for transfers (`from != address(0)` and `to != address(0)`) only checks the sender (`from`) for `isBlacklisted`. The recipient's (`to`) blacklist status is only checked during a mint operation (`from == address(0)`). The other checks, `hasTransferPause` and `hasTransferWhitelist`, are explicitly part of the transfer logic path.",
+      "title": "",
+      "id": "64433",
+      "text": "The `updateChecks` function enforces security rules for all share operations. When an existing shareholder (`from`) transfers shares to another address (`to`), which specific check is NOT performed on the recipient (`to`)?",
+      "answers": [
+        "Verification of the recipient's `isBlacklisted` status.",
+        "Verification of the global `hasTransferPause` flag.",
+        "Verification of the recipient's `canTransfer` status if `hasTransferWhitelist` is enabled."
+      ],
+      "correct": 0,
+      "explanation": "The correct answer is the blacklist check. The `updateChecks` function logic for transfers (`from != address(0)` and `to != address(0)`) only checks the sender (`from`) for `isBlacklisted`. The recipient's (`to`) blacklist status is only checked during a mint operation (`from == address(0)`). The other checks, `hasTransferPause` and `hasTransferWhitelist`, are explicitly part of the transfer logic path."
+    },
+    {
+      "type": "highlight",
+      "description": "Access control is managed through modifiers that leverage other modules in the vault's ecosystem.\n\n- `onlyQueue`: This modifier queries the vault's `IShareModule` to verify that the caller is a registered queue contract.\n- `onlyVaultOrQueue`: This modifier allows calls from either the main vault contract or a registered queue.\n\nAdministrative functions like changing flags or account info use a separate `onlyRole` modifier, which checks for specific roles using the vault's `IACLModule`. This creates a layered permission system.",
+      "file": "flexible-vaults/src/managers/ShareManager.sol",
+      "highlight": [
+        {
+          "start": 29,
+          "end": 43
+        }
+      ],
+      "title": "",
+      "id": "64430",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "`ShareManager` is an abstract contract and does not implement the final logic for minting and burning shares. Instead, it defines two `internal virtual` functions: `_mintShares` and `_burnShares`.\n\nThis forces any concrete subclass (like `BasicShareManager` or `TokenizedShareManager`) to provide its own implementation for how share balances are stored and modified. The main `mint` and `burn` functions in `ShareManager` handle all the checks and then delegate the actual state change to these subclass implementations, cleanly separating **permission logic** from **accounting logic**.",
+      "file": "flexible-vaults/src/managers/ShareManager.sol",
+      "highlight": [
+        {
+          "start": 261,
+          "end": 264
+        }
+      ],
+      "title": "",
+      "id": "64431",
+      "hideAreas": []
+    }
+  ]
+}
